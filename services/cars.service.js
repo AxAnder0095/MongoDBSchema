@@ -30,4 +30,4 @@ export const createCars = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "Failed to create cars" });
     }
-}
+};
