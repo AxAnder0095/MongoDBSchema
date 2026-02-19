@@ -1,16 +1,46 @@
 import User from "../models/users.model.js";
 
-// If adding a object with only one field, use deconstructing to get the value of 
-// that field instead of using req.body.fieldName, which is more concise and 
-// easier to read. For example, if the request body contains 
-// { "username": "john_doe" }, you can use const { username } = req.body; instead 
-// of const username = req.body.username; This way, you can directly access the 
-// username variable without having to reference req.body every time.
-// Same goes for fetching a single user by ID or username.
+// NOTE: Service layer should not handle HTTP requests or responses directly. 
+// Instead, it should focus on business logic and data manipulation.
+
+export const addUser = async (userData) => {
+    if (!userData.name || !userData.email) {
+        throw new Error("Name and email are required");
+    };
+
+    const newUser = new User(userData); // Create a new instance of the User model with the provided data
+    try {
+        const savedUser = await newUser.save(); // Save the new user to the database and return the saved user object
+        return savedUser;
+    } catch (err) {
+        throw new Error("Failed to add user");
+    };
+};
+
+export const addUsers = async (usersArray) => {
+    if (!Array.isArray(usersArray) || usersArray.length === 0) {
+        throw new Error("An array of users is required");
+    };
+
+    try {
+        const savedUsers = await User.insertMany(usersArray);
+        return savedUsers;
+    } catch (err) {
+        throw new Error("Failed to add users");
+    };
+};
+
+export const getAllUsers = () => User.find();
+export const getUserByID = (id) => User.findById(id);
+export const getUserByEmail = (email) => User.findOne({ email: email });
 
 
-// Add a new user to the database.
-export const addUser = async (req, res) => {
+
+
+// The following functions are depricated because they directly handle HTTP requests and responses, 
+// which should be the responsibility of the controller layer, not the service layer.
+
+export const addUserDepricated = async (req, res) => {
     const user = req.body;
 
     if (!user.name || !user.email) {
@@ -26,7 +56,7 @@ export const addUser = async (req, res) => {
     };
 };
 
-export const addUsers = async (req, res) => {
+export const addUsersDepricated = async (req, res) => {
     const users = req.body;
 
     if (!Array.isArray(users) || users.length === 0) {
@@ -36,7 +66,7 @@ export const addUsers = async (req, res) => {
     try {
         const savedUsers = await User.insertMany(users);
         res.status(201).json({ message: "Users added successfully", users: savedUsers });
-    }catch (err) {
+    } catch (err) {
         res.status(500).json({ message: "Failed to add users", error: err.message });
     };
 };

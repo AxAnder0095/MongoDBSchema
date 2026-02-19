@@ -1,33 +1,35 @@
 import Car from "../models/cars.model.js";
 
-export const createCar = async (req, res) => {
-    const car = req.body;
-
-    if (!car.make || !car.model || !car.year || !car.color) {
-        return res.status(400).json({ message: "All fields are required" });
+export const addCar = async (carData) => {
+    if (!carData.make || !carData.model || !carData.year || !carData.color) {
+        throw new Error("All fields are required");
     };
 
-    const newCar = new Car(car);
+    const newCar = new Car(carData);
 
     try {
         const savedCar = await newCar.save();
-        res.status(201).json({ data: savedCar });
+        return savedCar;
     } catch (err) {
-        res.status(500).json({ message: "Failed to create car" });
+        throw new Error("Failed to create car");
     };
 };
 
-export const createCars = async (req, res) => {
-    const cars = req.body;
-
-    if (!Array.isArray(cars) || cars.length === 0) {
-        return res.status(400).json({ message: "An array of cars is required" });
-    }
+export const addCars = async (carsArray) => {
+    if (!Array.isArray(carsArray) || carsArray.length === 0) {
+        throw new Error("An array of cars is required");
+    };
 
     try {
-        const savedCars = await Car.insertMany(cars);
-        res.status(201).json({ data: savedCars });
+        const savedCars = await Car.insertMany(carsArray);
+        return savedCars;
     } catch (err) {
-        res.status(500).json({ message: "Failed to create cars" });
-    }
+        throw new Error("Failed to create cars");
+    };
 };
+
+export const getAllCars = () => Car.find();
+export const getCarsByModel = (model) => Car.find({ model: model });
+export const getCarsByMake = (make) => Car.find({ make: make });
+export const getCarsByYear = (year) => Car.find({ year: year });
+export const getCarsByOwner = (owner) => Car.find({ owner: owner });
