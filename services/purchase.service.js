@@ -90,7 +90,7 @@ export const sellCar = async (req, res) => {
             });
         }
 
-        // 2️⃣ Remove car from user's ownedCars array
+        // 2️ Remove car from user's ownedCars array
         await User.findByIdAndUpdate(
             userId,
             { $pull: { ownedCars: carId } } // Remove the car ID from the user's ownedCars array

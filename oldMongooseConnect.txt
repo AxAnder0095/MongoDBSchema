@@ -1,0 +1,28 @@
+// async function startServer() {
+
+//     await db.connect(); // Ensure the database connection is established before starting the server
+
+//     const PORT = process.env.PORT || 5000;
+//     app.listen(PORT, () => {
+//         console.log(`Server is running on http://localhost:${PORT}`);
+//     });
+// };
+
+
+{
+  "name": "mongodbschema",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.2.1"
+  }
