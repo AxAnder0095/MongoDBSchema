@@ -1,104 +1,57 @@
-import Car from "../models/cars.model.js";
+import mongoose from "mongoose";
 import User from "../models/users.model.js";
+import Car from "../models/cars.model.js";
+import Order from "../models/order.model.js";
 
 export const purchaseCar = async (req, res) => {
-    const { carId, userId } = req.body;
+    const { carId, userId, price } = req.body; // Add price if needed
+
+    const session = await mongoose.startSession();
 
     try {
-        const user = await User.findById(userId);
-        if (!user) { // If the user doesn't exist, return a 404 error.
-            return res.status(404).json({ message: "User not found" });
-        };
+        await session.withTransaction(async () => {
 
-        const car = await Car.findOneAndUpdate(
-            { _id: carId, isSold: false }, // Find the car by ID and ensure it's not sold.
-            { isSold: true, owner: user._id }, // Update the car to mark it as sold and set the owner.
-            { new: true } // Return the updated car document.
-        );
+            const user = await User.findById(userId).session(session);
+            if (!user) {
+                throw new Error("USER_NOT_FOUND");
+            }
 
-        if (!car) { // If the car doesn't exist, then it has been sold or doesn't exist, return a 404 error.
-            return res.status(404).json({ message: "Car not found" });
-        };
+            const updatedCar = await Car.findOneAndUpdate(
+                { _id: carId, isSold: false },
+                { isSold: true, owner: user._id },
+                { returnDocument: "after", session }
+            );
 
-        await User.findByIdAndUpdate(
-            userId,
-            { $push: { ownedCars: car._id } } // Add the car ID to the user's ownedCars array.
-        )
+            if (!updatedCar) {
+                throw new Error("CAR_ALREADY_SOLD");
+            }
+
+            await Order.create(
+                [
+                    {
+                        user: user._id,
+                        car: updatedCar._id,
+                        price: price || updatedCar.price // Use provided price or fallback to car's price
+                    }
+                ],
+                { session }
+            );
+        });
 
         res.status(200).json({ message: "Car purchased successfully" });
+
     } catch (err) {
-        res.status(500).json({ message: "Failed to purchase car" });
-    };
-}
-
-export const purchaseCarDepricated = async (req, res) => {
-    const { carId, userId } = req.body;
-
-    try {
-        const user = await User.findById(userId);
-        if (!user) { // If the user doesn't exist, return a 404 error.
+        if (err.message === "USER_NOT_FOUND") {
             return res.status(404).json({ message: "User not found" });
-        };
-
-        const car = await Car.findById(carId);
-        if (!car) { // If the car doesn't exist, return a 404 error.
-            return res.status(404).json({ message: "Car not found" });
-        };
-
-        if (car.isSold) { // If the car is already sold, return a 400 error.
-            return res.status(400).json({ message: "Car is already sold" });
-        };
-
-        car.isSold = true;
-        car.owner = user._id;
-        await car.save();
-
-        user.ownedCars = car._id;
-        await user.save();
-
-        res.status(200).json({ message: "Car purchased successfully" });
-    } catch (err) {
-        res.status(500).json({ message: "Failed to purchase car" });
-    };
-};
-
-export const sellCar = async (req, res) => {
-    const { carId, userId } = req.body;
-
-    try {
-        // 1️ Atomically update the car ONLY if:
-        // - it exists
-        // - it is currently sold
-        // - it belongs to this user
-        const car = await Car.findOneAndUpdate(
-            {
-                _id: carId, // Find the car by ID
-                isSold: true, // Ensure the car is currently sold
-                owner: userId // Ensure the car belongs to this user
-            },
-            {
-                isSold: false, // Mark the car as unsold
-                owner: null // Remove the owner
-
-            },
-            { new: true } // Return the updated car document
-        );
-
-        if (!car) {
-            return res.status(400).json({
-                message: "Car not owned by this user or already unsold"
-            });
         }
 
-        // 2️ Remove car from user's ownedCars array
-        await User.findByIdAndUpdate(
-            userId,
-            { $pull: { ownedCars: carId } } // Remove the car ID from the user's ownedCars array
-        );
+        if (err.message === "CAR_ALREADY_SOLD") {
+            return res.status(409).json({ message: "Car is already sold" });
+        }
 
-        res.status(200).json({ message: "Car sold successfully" });
-
-    } catch (err) {
-        res.status(500).json({ message: "Failed to sell car" });
+        res.status(500).json({ message: "Failed to purchase car" });
+    } finally {
+        session.endSession();
     }
 };
+

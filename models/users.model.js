@@ -13,11 +13,6 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Name is required"]
-    }, 
-    ownedCars: { // Only use this field when a user is buying a car. 
-        type: mongoose.Schema.Types.ObjectId, // If user owns a car, enter the ID of the car. If user doesn't own a car, this field will be null.
-        ref: "Car",
-        default: null
     }
 });
 
