@@ -1,6 +1,6 @@
 import express from "express";
 import * as purchaseContollers from "../controllers/purchase.controller.js";
-import { purchaseCar} from "../services/purchase.service.js";
+import { purchaseCar, sellCar} from "../services/purchase.service.js";
 
 const router = express.Router();
 // Controller routes for purchases
@@ -11,5 +11,5 @@ router.get("/purchases/:userId", purchaseContollers.getPurchasesByUser);
 
 // Service routes for purchasing cars
 router.post("/purchases", purchaseCar);
-
+router.post("/sell", sellCar);
 export default router;
